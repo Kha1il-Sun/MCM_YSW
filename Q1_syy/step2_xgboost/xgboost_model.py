@@ -33,7 +33,10 @@ def load_data():
     y_path = os.path.join(step1_dir, 'y_target.csv')
     
     X = pd.read_csv(X_path)  # 特征数据
-    y = pd.read_csv(y_path)  # 目标变量数据
+    y_df = pd.read_csv(y_path)  # 目标变量数据
+    
+    # 确保目标变量是Series格式
+    y = y_df['Y染色体浓度'].copy()
     
     print(f"特征数据形状: {X.shape}")
     print(f"目标变量形状: {y.shape}")
