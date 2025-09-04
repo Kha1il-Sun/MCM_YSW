@@ -1,200 +1,58 @@
-# Byte-compiled / optimized / DLL files
+# Python bytecode
 __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
+# Virtual environments
 .env
 .venv
-env/
 venv/
 ENV/
-env.bak/
-venv.bak/
+env/
 
-# Spyder project settings
-.spyderproject
-.spyproject
+# Jupyter
+.ipynb_checkpoints/
 
-# Rope project settings
-.ropeproject
+# OS
+.DS_Store
+Thumbs.db
 
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# Machine Learning specific
-# Model files (uncomment if you don't want to track large model files)
-# *.h5
-# *.pkl
-# *.joblib
-# *.model
-
-# Data files (uncomment if you don't want to track large data files)
-# *.csv
-# *.xlsx
-# *.npy
-# *.npz
-
-# TensorFlow
-*.pb
-checkpoint
-*.ckpt
-*.ckpt.*
-
-# PyTorch
-*.pth
-*.pt
-
-# Jupyter Notebook outputs
-*.ipynb
-
-# IDE specific files
+# Editors/IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
+*.iml
 
-# OS specific files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Logs
+logs/
+*.log
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Cache
+.cache/
+.pytest_cache/
+.mypy_cache/
+
+# Local data/output (keep if intentionally tracked)
+# data/
+# outputs/
 
 # Temporary files
 *.tmp
 *.temp
-*.bak
-*.backup
+~$*
 
-# Log files
-*.log
-logs/
+# Excel backup files
+~$*.xlsx
 
-# Configuration files with sensitive information
-config.ini
-secrets.json
-.secrets
+# Images generated during runs (optional)
+# *.png
 
-# Large files that shouldn't be tracked
-*.zip
-*.tar.gz
-*.rar
-*.7z
-
-# Project specific
-# Uncomment the following lines if you don't want to track certain files
-# Q1/__pycache__/
-# Q1/*.npy
-# Q1/*.pkl
-# Q1/*.h5
-# Q1/*.png
+# Large files (uncomment to ignore if needed)
+# *.npy
+# *.npz
+# *.pkl
+# *.h5
