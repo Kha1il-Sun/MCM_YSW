@@ -1,0 +1,31 @@
+# Y染色体浓度预测系统依赖包
+# 深度学习框架
+tensorflow>=2.10.0
+keras>=2.10.0
+
+# 数据处理
+pandas>=1.5.0
+numpy>=1.21.0
+scikit-learn>=1.1.0
+
+# 数据可视化
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Excel文件处理
+openpyxl>=3.0.0
+xlrd>=2.0.0
+
+# 模型保存和加载
+joblib>=1.2.0
+
+# 可选：模型解释工具
+# lime>=0.2.0
+# shap>=0.41.0
+
+# 可选：进度条
+tqdm>=4.64.0
+
+# 可选：Jupyter支持
+# jupyter>=1.0.0
+# ipykernel>=6.0.0
