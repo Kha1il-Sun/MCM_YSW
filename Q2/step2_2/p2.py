@@ -141,14 +141,11 @@ def run_analysis(config_path: str, data_dir: str, output_dir: str) -> dict:
     logger.info(f"使用实际数据范围: 孕周 {actual_week_min:.1f} - {actual_week_max:.1f} 周")
     
     # 使用网格搜索求解w*(b)曲线
-    wstar_curve_EC = solve_w_star_curve_with_grid_search(
+    wstar_curve = solve_w_star_curve_with_grid_search(
         long_df, mu_model, sigma_lookup, 
         model_params.get('scenario_params', {}),
         **grid_params
     )
-    
-    # 为了保持兼容性，创建相同的S版本（实际使用相同结果）
-    wstar_curve_S = wstar_curve_EC.copy()
     
     # 5. BMI分组（基于实际数据分布）
     logger.info("步骤 5: BMI分组")
@@ -160,21 +157,8 @@ def run_analysis(config_path: str, data_dir: str, output_dir: str) -> dict:
     
     logger.info(f"使用BMI四分位数作为切点: {custom_cuts}")
     
-    cuts_EC, groups_EC = find_bmi_cuts(
-        wstar_curve_EC,
-        who_cuts=grouping_params.get('who_cuts', [18.5, 25.0, 30.0]),
-        method='custom',
-        custom_cuts=custom_cuts,
-        delta=grouping_params.get('delta', 2.0),
-        min_group_n=grouping_params.get('min_group_n', 10),  # 降低最小组数要求
-        min_cut_distance=grouping_params.get('min_cut_distance', 1.0),
-        search=grouping_params.get('search', 'tree'),
-        tree_params=grouping_params.get('tree_params', {}),
-        dp_params=grouping_params.get('dp_params', {})
-    )
-    
-    cuts_S, groups_S = find_bmi_cuts(
-        wstar_curve_S,
+    cuts, groups = find_bmi_cuts(
+        wstar_curve,
         who_cuts=grouping_params.get('who_cuts', [18.5, 25.0, 30.0]),
         method='custom',
         custom_cuts=custom_cuts,
@@ -188,81 +172,25 @@ def run_analysis(config_path: str, data_dir: str, output_dir: str) -> dict:
     
     # 6. 评估分组质量
     logger.info("步骤 6: 评估分组质量")
-    evaluation_EC = evaluate_grouping_quality(groups_EC, wstar_curve_EC)
-    evaluation_S = evaluate_grouping_quality(groups_S, wstar_curve_S)
+    evaluation = evaluate_grouping_quality(groups, wstar_curve)
     
     # 7. 生成报告
     logger.info("步骤 7: 生成报告")
-    report_EC = create_grouping_report(groups_EC, evaluation_EC)
-    report_S = create_grouping_report(groups_S, evaluation_S)
+    report = create_grouping_report(groups, evaluation)
     
-    # 8. 创建可视化（简化版）
-    logger.info("步骤 8: 创建可视化")
-    try:
-        import matplotlib.pyplot as plt
-        import matplotlib
-        matplotlib.use('Agg')  # 非交互式后端
-        
-        # 设置中文字体
-        plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
-        plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
-        
-        # 主分析图
-        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-        
-        # w*(b)曲线对比
-        axes[0, 0].plot(wstar_curve_EC['BMI'], wstar_curve_EC['w_star_smooth'], 'b-', label='EC版本', linewidth=2)
-        axes[0, 0].plot(wstar_curve_S['BMI'], wstar_curve_S['w_star_smooth'], 'r--', label='S版本', linewidth=2)
-        axes[0, 0].set_xlabel('BMI')
-        axes[0, 0].set_ylabel('最优时间 w*(b)')
-        axes[0, 0].set_title('w*(b) 曲线对比')
-        axes[0, 0].legend()
-        axes[0, 0].grid(True, alpha=0.3)
-        
-        # BMI分布
-        axes[0, 1].hist(long_df['BMI_used'], bins=20, alpha=0.7, edgecolor='black')
-        axes[0, 1].set_xlabel('BMI')
-        axes[0, 1].set_ylabel('频数')
-        axes[0, 1].set_title('BMI分布')
-        axes[0, 1].grid(True, alpha=0.3)
-        
-        # 分组结果对比
-        axes[1, 0].bar(groups_EC['group_id'], groups_EC['optimal_time'], alpha=0.7, label='EC版本')
-        axes[1, 0].bar(groups_S['group_id'], groups_S['optimal_time'], alpha=0.7, label='S版本')
-        axes[1, 0].set_xlabel('分组ID')
-        axes[1, 0].set_ylabel('推荐时间')
-        axes[1, 0].set_title('分组推荐时间对比')
-        axes[1, 0].legend()
-        axes[1, 0].grid(True, alpha=0.3)
-        
-        # 最优时点分布
-        axes[1, 1].hist(wstar_curve_EC['w_star'], bins=20, alpha=0.7, edgecolor='black')
-        axes[1, 1].set_xlabel('最优时点 (周)')
-        axes[1, 1].set_ylabel('频数')
-        axes[1, 1].set_title('最优时点分布')
-        axes[1, 1].grid(True, alpha=0.3)
-        
-        plt.tight_layout()
-        main_plot = fig
-        
-    except ImportError:
-        logger.warning("matplotlib未安装，跳过可视化")
-        main_plot = None
+    # 8. 跳过可视化
+    logger.info("步骤 8: 跳过可视化（已禁用）")
+    main_plot = None
     
     # 9. 汇总结果
     results = {
         'config': config,
         'data_summary': data_summary,
-        'wstar_curve_EC': wstar_curve_EC,
-        'wstar_curve_S': wstar_curve_S,
-        'groups_EC': groups_EC,
-        'groups_S': groups_S,
-        'cuts_EC': cuts_EC,
-        'cuts_S': cuts_S,
-        'evaluation_EC': evaluation_EC,
-        'evaluation_S': evaluation_S,
-        'report_EC': report_EC,
-        'report_S': report_S,
+        'wstar_curve': wstar_curve,
+        'groups': groups,
+        'cuts': cuts,
+        'evaluation': evaluation,
+        'report': report,
         'main_plot': main_plot,
         'models': {
             'mu_model': mu_model,

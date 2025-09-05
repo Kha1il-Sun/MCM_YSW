@@ -39,8 +39,7 @@ Y(t,b) = μ_τ(t,b) + ε(t,b)
 
 #### 风险函数
 
-**误差修正版**：`R_EC(t,b) = w₁[1 - p_succ(t,b)] + w₂Delay(t) + w₃Redraw(t,b)`
-**生存版**：`R_S(t,b) = w₁S(t|b) + w₂Delay(t) + w₃Redraw(t,b)`
+**风险函数**：`R(t,b) = w₁[1 - p_succ(t,b)] + w₂Delay(t) + w₃Redraw(t,b)`
 
 ### 2. 优化算法
 
@@ -142,7 +141,7 @@ Q2/
     └── outputs/                 # 输出结果
         ├── p2_wstar_curve.csv   # w*(b)曲线
         ├── p2_group_recommendation.csv # BMI分组
-        └── main_analysis.png    # 分析图表
+        └── p2_report.txt        # 分析报告
 ```
 
 ## 🔄 工作流程
@@ -159,7 +158,7 @@ Q2/
 2. **失败建模**：情景函数预测检测失败概率
 3. **优化求解**：网格搜索寻找最佳检测时点
 4. **BMI分组**：混合方法进行智能分组
-5. **验证评估**：交叉验证和敏感性分析
+5. **验证评估**：模型验证和结果分析
 
 ## 📊 主要结果
 
@@ -250,12 +249,6 @@ grouping:
 
 ## 🔧 高级功能
 
-### 敏感性分析
-
-```bash
-python p2.py --sensitivity --param tau --values 0.85,0.90,0.95
-```
-
 ### 模型验证
 
 ```bash
@@ -268,12 +261,6 @@ python p2.py --validate --cv-folds 5
 python p2.py --grouping-method tree --min-group-size 15
 ```
 
-### 结果可视化
-
-```bash
-python p2.py --plot --output-format png,pdf
-```
-
 ## 📚 依赖库详解
 
 ### 核心依赖
@@ -281,13 +268,11 @@ python p2.py --plot --output-format png,pdf
 - **pandas**：数据处理和分析
 - **numpy**：数值计算和数组操作
 - **scikit-learn**：机器学习算法和工具
-- **matplotlib/seaborn**：数据可视化
 - **scipy**：科学计算和统计函数
 
 ### 可选依赖
 
 - **lifelines**：生存分析
-- **plotly**：交互式可视化
 - **jupyter**：交互式开发环境
 
 ## 📝 文件说明
@@ -321,8 +306,6 @@ python p2.py --plot --output-format png,pdf
 |--------|------|------|------|
 | `p2_wstar_curve.csv` | w*(b)曲线 | CSV | 最优时点数据 |
 | `p2_group_recommendation.csv` | 分组推荐 | CSV | BMI分组结果 |
-| `main_analysis.png` | 主分析图 | PNG | 综合分析图表 |
-| `sensitivity_analysis.png` | 敏感性图 | PNG | 参数敏感性分析 |
 | `p2_report.txt` | 分析报告 | TXT | 详细分析报告 |
 | `step2_config_used.yaml` | 使用配置 | YAML | 实际使用的参数 |
 
@@ -353,15 +336,22 @@ python p2.py --plot --output-format png,pdf
 
 1. **内存不足**：减少b_resolution或使用分块处理
 2. **计算时间过长**：使用并行计算或减少搜索范围
-3. **可视化问题**：检查matplotlib字体配置
+3. **分组不合理**：检查约束参数设置
 4. **结果异常**：检查数据质量和参数设置
 
 ## 📝 版本历史
 
+### v2.1.0 (2024-01-20)
+
+- **代码简化**：去除EC/S版本重复代码，统一为单一版本
+- **功能优化**：禁用可视化，专注核心分析功能
+- **结构清理**：删除重复数据文件和临时文件
+- **性能提升**：减少内存使用和计算时间
+
 ### v2.0.0 (2024-01-15)
 
 - **重大更新**：重构代码架构，提升模块化程度
-- **新增功能**：敏感性分析、模型验证、自定义分组
+- **新增功能**：模型验证、自定义分组
 - **性能优化**：并行计算、内存优化、向量化操作
 - **文档完善**：详细的README和API文档
 
@@ -370,7 +360,7 @@ python p2.py --plot --output-format png,pdf
 - **初始版本**：基础功能实现
 - **核心算法**：分位数回归、网格搜索、BMI分组
 - **数据处理**：区间删失、异常值处理
-- **结果输出**：CSV报告、PNG图表
+- **结果输出**：CSV报告、TXT报告
 
 ## 👥 作者信息
 

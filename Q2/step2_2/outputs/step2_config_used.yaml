@@ -1,0 +1,153 @@
+data_paths:
+  long_records: data/step1_long_records.csv
+  report: data/step1_report.csv
+  step1_config: data/step1_config.yaml
+  surv_dat_fit: data/step1_surv_dat_fit.csv
+data_processing:
+  record_level_boundaries: true
+  survival_library_alignment: true
+  use_first_bmi: true
+grouping:
+  custom_cuts:
+  - 20.0
+  - 28.0
+  - 32.0
+  - 36.0
+  - 40.0
+  delta: 2.0
+  dp_params:
+    max_cuts: 5
+    penalty_weight: 0.1
+  method: custom
+  min_cut_distance: 1.0
+  min_group_n: 10
+  tree_params:
+    max_depth: 3
+    min_samples_leaf: 10
+    min_samples_split: 20
+  who_cuts:
+  - 18.5
+  - 25.0
+  - 30.0
+model_params:
+  aft_distributions:
+  - LogLogistic
+  - Weibull
+  - LogNormal
+  features: poly+interactions
+  qc_cols: null
+  quantile_model: GAM
+  quantile_tau: 0.9
+  scenario_params:
+    base_fail_rate: 0.05
+    early_week_penalty: 0.02
+    early_week_threshold: 15.0
+    high_bmi_penalty: 0.01
+    high_bmi_threshold: 30.0
+  selection_criterion: AIC
+  use_gam: true
+optimization:
+  isotonic_method: isotonic
+  isotonic_regression: true
+  solver_method: brent
+  t_range:
+  - 10
+  - 30
+  t_resolution: 0.5
+  t_tolerance: 0.05
+output_paths:
+  group_recommendation: outputs/p2_group_recommendation.csv
+  main_analysis_plot: outputs/main_analysis.png
+  report: outputs/p2_report.txt
+  sensitivity_plot: outputs/sensitivity_analysis.png
+  wstar_curve: outputs/p2_wstar_curve.csv
+parallel:
+  backend: threading
+  n_jobs: -1
+random_seed: 42
+reporting:
+  decimal_places: 4
+  include_bootstrap_ci: true
+  include_config: true
+  include_sensitivity: true
+  include_validation: true
+  language: chinese
+risk_params:
+  alpha: 0.05
+  delay_penalties:
+    early:
+    - 13
+    - 27
+    early_penalty: 0.5
+    late:
+    - 28
+    - 50
+    late_penalty: 1.0
+  tau: 0.8
+  w1: 1.0
+  w2: 0.5
+  w3: 0.3
+sensitivity:
+  delta_range:
+  - 1.0
+  - 3.0
+  delta_steps: 5
+  scenario_sets:
+    aggressive:
+      delta: 1.0
+      tau: 0.7
+    conservative:
+      delta: 3.0
+      tau: 0.9
+    moderate:
+      delta: 2.0
+      tau: 0.8
+  sigma_range:
+  - 0.8
+  - 1.2
+  sigma_steps: 5
+  tau_range:
+  - 0.7
+  - 0.9
+  tau_steps: 5
+  threshold_range:
+  - 0.035
+  - 0.045
+  threshold_steps: 5
+sigma_estimation:
+  fallback_to_global: true
+  interpolation_method: linear
+  local_sigma_path: null
+  shrinkage_lambda: 0.1
+  use_local_sigma: true
+thresholds:
+  Y_concentration_threshold: 0.04
+  Y_outlier_quantile: 0.995
+  Y_outlier_threshold: 0.19305726988000005
+  week_diff_extreme_threshold: 3.0
+validation:
+  bootstrap_confidence: 0.95
+  bootstrap_samples: 500
+  cv_folds: 5
+  cv_method: GroupKFold
+  extrapolation_range:
+  - 8
+  - 35
+  time_extrapolation: true
+visualization:
+  font_config:
+    chinese_font: SimHei
+    family: DejaVu Sans
+    size: 12
+  main_plot:
+    dpi: 300
+    figsize:
+    - 12
+    - 8
+    style: seaborn-v0_8
+  sensitivity_plot:
+    colormap: viridis
+    dpi: 300
+    figsize:
+    - 15
+    - 10

@@ -235,27 +235,16 @@ def save_results(results: Dict[str, Any], output_dir: str, config: Dict[str, Any
         results['wstar_curve'].to_csv(wstar_path, index=False)
         logger.info(f"保存w*曲线: {wstar_path}")
     
-    if 'group_recommendation' in results:
+    if 'groups' in results:
         group_path = os.path.join(output_dir, "p2_group_recommendation.csv")
-        results['group_recommendation'].to_csv(group_path, index=False)
+        results['groups'].to_csv(group_path, index=False)
         logger.info(f"保存分组推荐: {group_path}")
     
-    # 保存图片
-    if 'main_plot' in results:
-        plot_path = os.path.join(output_dir, "main_analysis.png")
-        results['main_plot'].savefig(plot_path, dpi=300, bbox_inches='tight')
-        logger.info(f"保存主图: {plot_path}")
-    
-    if 'sensitivity_plot' in results:
-        sens_path = os.path.join(output_dir, "sensitivity_analysis.png")
-        results['sensitivity_plot'].savefig(sens_path, dpi=300, bbox_inches='tight')
-        logger.info(f"保存敏感性图: {sens_path}")
-    
     # 保存报告
-    if 'report_text' in results:
+    if 'report' in results:
         report_path = os.path.join(output_dir, "p2_report.txt")
         with open(report_path, 'w', encoding='utf-8') as f:
-            f.write(results['report_text'])
+            f.write(results['report'])
         logger.info(f"保存报告: {report_path}")
     
     # 保存配置回填
