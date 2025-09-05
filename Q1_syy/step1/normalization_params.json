@@ -1,0 +1,23 @@
+{
+  "X_features_min": [
+    11.0,
+    20.703125
+  ],
+  "X_features_max": [
+    29.0,
+    46.875
+  ],
+  "y_target_min": [
+    0.010003887
+  ],
+  "y_target_max": [
+    0.234217554
+  ],
+  "feature_columns": [
+    "孕周数",
+    "BMI"
+  ],
+  "target_columns": [
+    "Y染色体浓度"
+  ]
+}
