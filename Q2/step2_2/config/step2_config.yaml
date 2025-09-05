@@ -1,0 +1,182 @@
+# Step2 配置参数文件
+# BMI 分组与最佳 NIPT 时点优化
+
+# 数据路径配置
+data_paths:
+  long_records: "data/step1_long_records.csv"
+  surv_dat_fit: "data/step1_surv_dat_fit.csv"
+  report: "data/step1_report.csv"
+  step1_config: "data/step1_config.yaml"
+
+# 输出路径配置
+output_paths:
+  wstar_curve: "outputs/p2_wstar_curve.csv"
+  group_recommendation: "outputs/p2_group_recommendation.csv"
+  main_analysis_plot: "outputs/main_analysis.png"
+  sensitivity_plot: "outputs/sensitivity_analysis.png"
+  report: "outputs/p2_report.txt"
+
+# 模型参数配置
+model_params:
+  # 纵向通道参数
+  quantile_model: "GAM"  # GBR|GAM
+  quantile_tau: 0.9      # 分位数回归的τ值 (90%分位数作为保守估计)
+  features: "poly+interactions"  # 特征工程类型
+  use_gam: true  # 是否使用GAM模型
+  
+  # 生存通道参数
+  aft_distributions: ["LogLogistic", "Weibull", "LogNormal"]  # 尝试的分布
+  selection_criterion: "AIC"  # AIC|BIC|calibration
+  
+  # 失败通道参数
+  qc_cols: null  # 如果有失败标签列，在此指定
+  scenario_params:
+    base_fail_rate: 0.05  # 基础失败率
+    early_week_penalty: 0.02  # 早孕周惩罚
+    high_bmi_penalty: 0.01   # 高BMI惩罚
+    early_week_threshold: 15.0  # 早孕周阈值
+    high_bmi_threshold: 30.0    # 高BMI阈值
+
+# 风险函数参数
+risk_params:
+  # 权重配置
+  w1: 1.0  # 失败风险权重
+  w2: 0.5  # 延迟风险权重
+  w3: 0.3  # 重抽风险权重
+  
+  # 延迟风险分段
+  delay_penalties:
+    early: [13, 27]    # 13-27周：中等风险
+    late: [28, 50]     # ≥28周：高风险
+    early_penalty: 0.5
+    late_penalty: 1.0
+  
+  # 成功概率阈值
+  tau: 0.8  # 最小成功概率要求
+  alpha: 0.05  # 置信水平（用于阈值调整）
+
+# 优化参数
+optimization:
+  # 搜索范围
+  t_range: [10, 30]  # 孕周搜索范围
+  t_resolution: 0.5  # 粗网格分辨率（周）
+  t_tolerance: 0.05  # 细网格收敛容差（周）
+  
+  # 保序回归
+  isotonic_regression: true
+  isotonic_method: "isotonic"  # isotonic|monotonic
+  
+  # 数值求解方法
+  solver_method: "brent"  # brent|bisection|newton
+
+# BMI分组参数
+grouping:
+  # 自定义BMI切点：[20,28), [28,32), [32,36), [36,40), 40+
+  custom_cuts: [20.0, 28.0, 32.0, 36.0, 40.0]
+  who_cuts: [18.5, 25.0, 30.0]  # 保留WHO标准作为参考
+  
+  # 微调参数
+  method: "custom"  # custom|hybrid|tree|dp
+  delta: 2.0  # 微调窗口（BMI单位）
+  min_group_n: 10  # 降低最小组内样本量要求
+  min_cut_distance: 1.0  # 最小切点间距（BMI单位）
+  
+  # 决策树参数
+  tree_params:
+    max_depth: 3
+    min_samples_split: 20
+    min_samples_leaf: 10
+  
+  # DP参数
+  dp_params:
+    penalty_weight: 0.1
+    max_cuts: 5
+
+# 验证参数
+validation:
+  # 交叉验证
+  cv_method: "GroupKFold"  # GroupKFold|LOPO
+  cv_folds: 5
+  
+  # Bootstrap
+  bootstrap_samples: 500
+  bootstrap_confidence: 0.95
+  
+  # 时间外推
+  time_extrapolation: true
+  extrapolation_range: [8, 35]  # 外推范围
+
+# 敏感性分析参数
+sensitivity:
+  # 参数扰动范围
+  tau_range: [0.7, 0.9]  # τ扰动范围
+  delta_range: [1.0, 3.0]  # δ扰动范围
+  threshold_range: [0.035, 0.045]  # 阈值扰动范围
+  sigma_range: [0.8, 1.2]  # σ扰动范围（倍数）
+  
+  # 扰动步长
+  tau_steps: 5
+  delta_steps: 5
+  threshold_steps: 5
+  sigma_steps: 5
+  
+  # 情景集
+  scenario_sets:
+    conservative: {tau: 0.9, delta: 3.0}
+    moderate: {tau: 0.8, delta: 2.0}
+    aggressive: {tau: 0.7, delta: 1.0}
+
+# σ估计参数
+sigma_estimation:
+  # 局部σ优先
+  use_local_sigma: true
+  local_sigma_path: null  # 如果有局部σ网格文件
+  
+  # 回退策略
+  fallback_to_global: true
+  shrinkage_lambda: 0.1  # 向全局σ收缩的权重
+  
+  # 插值方法
+  interpolation_method: "linear"  # linear|cubic|nearest
+
+# 可视化参数
+visualization:
+  # 主图配置
+  main_plot:
+    figsize: [12, 8]
+    dpi: 300
+    style: "seaborn-v0_8"
+    
+  # 敏感性图配置
+  sensitivity_plot:
+    figsize: [15, 10]
+    dpi: 300
+    colormap: "viridis"
+    
+  # 字体配置
+  font_config:
+    family: "DejaVu Sans"
+    size: 12
+    chinese_font: "SimHei"  # 中文字体
+
+# 报告配置
+reporting:
+  # 数值精度
+  decimal_places: 4
+  
+  # 包含内容
+  include_config: true
+  include_sensitivity: true
+  include_validation: true
+  include_bootstrap_ci: true
+  
+  # 语言
+  language: "chinese"  # chinese|english
+
+# 随机种子
+random_seed: 42
+
+# 并行计算
+parallel:
+  n_jobs: -1  # -1表示使用所有CPU核心
+  backend: "threading"  # threading|multiprocessing

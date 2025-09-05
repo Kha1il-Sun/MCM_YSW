@@ -1,0 +1,16 @@
+data_processing:
+  record_level_boundaries: true
+  survival_library_alignment: true
+  use_first_bmi: true
+sigma_estimation:
+  local_binning:
+    bmi_bins: 3
+    week_bins: 5
+  threshold_nearby_range:
+  - 0.03
+  - 0.05
+thresholds:
+  Y_concentration_threshold: 0.04
+  Y_outlier_quantile: 0.995
+  Y_outlier_threshold: 0.19305726988000005
+  week_diff_extreme_threshold: 3.0
