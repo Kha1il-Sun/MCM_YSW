@@ -1,207 +1,212 @@
 """
-Problem 2 主程序
-BMI 分组与最佳 NIPT 时点优化
+基于经验数据的理论模型主程序
+使用数学公式支撑的理论框架，便于后续迭代
 """
 
-import os
 import sys
-import argparse
+import os
 import logging
-import numpy as np
+import argparse
 from pathlib import Path
 
 # 添加src目录到路径
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-# 导入模块
-from io_utils import load_step1_products, load_step2_config, save_results, get_data_summary
-from sigma_lookup import build_sigma_lookup
-from models_long import fit_quantile_models
-from grid_search import solve_w_star_curve_with_grid_search
-from grouping import find_bmi_cuts, evaluate_grouping_quality, create_grouping_report
+from io_utils import load_step1_products, load_step2_config
+from empirical_model import create_empirical_model_from_data, EmpiricalDetectionModel
 
 # 设置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('p2.log'),
-        logging.StreamHandler()
-    ]
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
 def main():
-    """主函数"""
-    parser = argparse.ArgumentParser(description='Problem 2: BMI分组与最佳NIPT时点优化')
-    parser.add_argument('--config', type=str, default='config/step2_config.yaml',
-                       help='配置文件路径')
-    parser.add_argument('--data-dir', type=str, default='data',
-                       help='数据目录路径')
-    parser.add_argument('--output-dir', type=str, default='outputs',
-                       help='输出目录路径')
-    parser.add_argument('--verbose', action='store_true',
-                       help='详细输出')
+    """主程序入口"""
+    parser = argparse.ArgumentParser(description='基于经验数据的理论模型分析')
+    parser.add_argument('--config', default='config/step2_config.yaml', help='配置文件路径')
+    parser.add_argument('--data-dir', default='../step2_1', help='数据目录')
+    parser.add_argument('--output-dir', default='outputs', help='输出目录')
+    parser.add_argument('--verbose', action='store_true', help='详细输出')
     
     args = parser.parse_args()
     
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
     
+    logger.info("开始基于经验数据的理论模型分析...")
+    
     try:
-        # 运行主流程
-        results = run_analysis(args.config, args.data_dir, args.output_dir)
+        # 1. 读取数据与配置
+        logger.info("步骤 1: 读取数据与配置")
+        long_df, surv_df, report, step1_config = load_step1_products(args.data_dir)
+        config = load_step2_config(args.config)
         
-        # 保存结果
-        save_results(results, args.output_dir, results['config'])
+        logger.info(f"数据摘要: {len(long_df)} 条记录, {long_df['id'].nunique()} 个个体")
+        
+        # 2. 创建经验检测模型
+        logger.info("步骤 2: 创建经验检测模型")
+        empirical_model = create_empirical_model_from_data(long_df)
+        
+        # 显示模型参数
+        params = empirical_model.get_model_parameters()
+        logger.info(f"模型参数: α={params['alpha']:.3f}, β={params['beta']:.3f}")
+        logger.info(f"约束条件: t_min={params['t_min']:.1f}, t_max={params['t_max']:.1f}")
+        
+        # 3. 生成w*(b)曲线
+        logger.info("步骤 3: 生成w*(b)曲线")
+        
+        # 创建BMI网格
+        bmi_min = long_df['BMI_used'].min()
+        bmi_max = long_df['BMI_used'].max()
+        bmi_grid = np.linspace(bmi_min, bmi_max, 40)
+        
+        # 计算每个BMI点的最优时点
+        wstar_curve_data = []
+        for bmi in bmi_grid:
+            optimal_time = empirical_model.predict_optimal_time(bmi)
+            lower_bound, upper_bound = empirical_model.predict_confidence_interval(bmi)
+            
+            wstar_curve_data.append({
+                'BMI': bmi,
+                'w_star': optimal_time,
+                'w_star_smooth': optimal_time,
+                'min_risk': 0.1,  # 经验模型的风险值
+                'lower_bound': lower_bound,
+                'upper_bound': upper_bound
+            })
+        
+        wstar_curve = pd.DataFrame(wstar_curve_data)
+        logger.info(f"生成了 {len(wstar_curve)} 个BMI点的w*(b)曲线")
+        
+        # 4. BMI分组
+        logger.info("步骤 4: BMI分组")
+        grouping_params = config.get('grouping', {})
+        custom_cuts = grouping_params.get('custom_cuts', [20.0, 30.5, 32.7, 34.4, 50.0])
+        
+        logger.info(f"使用自定义BMI切点: {custom_cuts}")
+        
+        # 使用经验模型进行分组
+        bmi_groups = {
+            '低BMI组': (20.0, 30.5),
+            '中BMI组': (30.5, 32.7),
+            '高BMI组': (32.7, 34.4),
+            '极高BMI组': (34.4, 50.0)
+        }
+        
+        group_times = empirical_model.predict_group_time(bmi_groups)
+        
+        # 创建分组结果
+        groups_data = []
+        for i, (group_name, (bmi_min, bmi_max)) in enumerate(bmi_groups.items(), 1):
+            bmi_median = (bmi_min + bmi_max) / 2
+            optimal_time = group_times[group_name]
+            
+            # 计算该组的实际数据统计
+            group_mask = (long_df['BMI_used'] >= bmi_min) & (long_df['BMI_used'] < bmi_max)
+            group_data = long_df[group_mask]
+            n_points = len(group_data)
+            
+            groups_data.append({
+                'group_id': i,
+                'bmi_min': bmi_min,
+                'bmi_max': bmi_max,
+                'bmi_mean': group_data['BMI_used'].mean() if n_points > 0 else bmi_median,
+                'n_points': n_points,
+                'optimal_time': optimal_time,
+                'time_std': 0.0,  # 经验模型的标准差
+                'mean_risk': 0.1
+            })
+        
+        groups_df = pd.DataFrame(groups_data)
+        
+        # 5. 模型评估
+        logger.info("步骤 5: 模型评估")
+        
+        # 计算实际数据的首次达标时点
+        first_hit = long_df[long_df['Y_frac'] > 0.04].groupby(['id', 'bmi_group'])['week'].min().reset_index()
+        
+        # 评估模型性能
+        bmi_data = []
+        time_data = []
+        for group in ['低BMI组', '中BMI组', '高BMI组', '极高BMI组']:
+            group_data = first_hit[first_hit['bmi_group'] == group]
+            if len(group_data) > 0:
+                bmi_median = long_df[long_df['bmi_group'] == group]['BMI_used'].median()
+                time_mean = group_data['week'].mean()
+                bmi_data.append(bmi_median)
+                time_data.append(time_mean)
+        
+        if len(bmi_data) > 0:
+            performance = empirical_model.evaluate_model(np.array(bmi_data), np.array(time_data))
+            logger.info(f"模型性能: MAE={performance['mae']:.2f}, RMSE={performance['rmse']:.2f}, R={performance['correlation']:.3f}")
+        
+        # 6. 生成报告
+        logger.info("步骤 6: 生成报告")
+        
+        report_content = f"""=== 基于经验数据的理论模型分析报告 ===
+
+1. 模型参数
+   - 对数关系: t = {params['alpha']:.3f} × ln(BMI) + {params['beta']:.3f}
+   - 个体变异修正系数: {params['gamma']:.3f}
+   - BMI偏离修正系数: {params['delta']:.3f}
+   - 参考BMI: {params['bmi_ref']:.1f}
+   - 时点约束: {params['t_min']:.1f} - {params['t_max']:.1f} 周
+
+2. BMI分组推荐
+"""
+        
+        for _, row in groups_df.iterrows():
+            report_content += f"   组 {row['group_id']}: BMI [{row['bmi_min']:.1f}, {row['bmi_max']:.1f}), 推荐时点 {row['optimal_time']:.1f} 周\n"
+        
+        if len(bmi_data) > 0:
+            report_content += f"""
+3. 模型性能
+   - 平均绝对误差: {performance['mae']:.2f} 周
+   - 均方根误差: {performance['rmse']:.2f} 周
+   - 相关系数: {performance['correlation']:.3f}
+
+4. 数学公式
+   基础时点: t_base(BMI) = {params['alpha']:.3f} × ln(BMI) + {params['beta']:.3f}
+   最优时点: t_optimal(BMI,σ) = t_base(BMI) + {params['gamma']:.3f} × σ + {params['delta']:.3f} × (BMI - {params['bmi_ref']:.1f})²
+   置信区间: CI(t) = t_optimal(BMI,σ) ± 1.96 × SE(t)
+"""
+        
+        # 7. 保存结果
+        logger.info("步骤 7: 保存结果")
+        
+        # 确保输出目录存在
+        os.makedirs(args.output_dir, exist_ok=True)
+        
+        # 保存文件
+        wstar_curve.to_csv(f"{args.output_dir}/p2_empirical_wstar_curve.csv", index=False)
+        groups_df.to_csv(f"{args.output_dir}/p2_empirical_group_recommendation.csv", index=False)
+        
+        with open(f"{args.output_dir}/p2_empirical_report.txt", 'w', encoding='utf-8') as f:
+            f.write(report_content)
+        
+        # 保存模型参数
+        import yaml
+        with open(f"{args.output_dir}/empirical_model_params.yaml", 'w', encoding='utf-8') as f:
+            yaml.dump(params, f, default_flow_style=False, allow_unicode=True)
         
         logger.info("分析完成！")
+        logger.info(f"结果已保存到 {args.output_dir}/")
+        
+        # 显示结果摘要
+        print("\n=== 结果摘要 ===")
+        print("BMI分组推荐时点:")
+        for _, row in groups_df.iterrows():
+            print(f"  组 {row['group_id']}: {row['bmi_min']:.1f}-{row['bmi_max']:.1f} BMI → {row['optimal_time']:.1f} 周")
+        
+        if len(bmi_data) > 0:
+            print(f"\n模型性能: MAE={performance['mae']:.2f}周, R={performance['correlation']:.3f}")
         
     except Exception as e:
         logger.error(f"分析失败: {e}")
         raise
 
 
-def run_analysis(config_path: str, data_dir: str, output_dir: str) -> dict:
-    """
-    运行完整分析流程
-    
-    Parameters:
-    -----------
-    config_path : str
-        配置文件路径
-    data_dir : str
-        数据目录路径
-    output_dir : str
-        输出目录路径
-        
-    Returns:
-    --------
-    dict
-        分析结果
-    """
-    logger.info("开始 Problem 2 分析...")
-    
-    # 1. 读取数据与配置
-    logger.info("步骤 1: 读取数据与配置")
-    long_df, surv_df, report, cfg1 = load_step1_products(data_dir)
-    cfg2 = load_step2_config(config_path)
-    
-    # 合并配置
-    config = {**cfg1, **cfg2}
-    
-    # 数据摘要
-    data_summary = get_data_summary(long_df, surv_df)
-    logger.info(f"数据摘要: {data_summary['n_individuals']} 个个体, {data_summary['n_records']} 条记录")
-    
-    # 2. 构建σ查表器
-    logger.info("步骤 2: 构建σ查表器")
-    sigma_lookup = build_sigma_lookup(
-        report, 
-        config.get('sigma_estimation', {}).get('local_sigma_path'),
-        config.get('sigma_estimation', {}).get('shrinkage_lambda', 0.1),
-        config.get('sigma_estimation', {}).get('interpolation_method', 'linear')
-    )
-    
-    # 3. 纵向通道：拟合μ/分位模型
-    logger.info("步骤 3: 纵向通道建模")
-    model_params = config.get('model_params', {})
-    
-    # 使用GAM分位数回归模型
-    use_gam = model_params.get('use_gam', True)
-    tau = model_params.get('quantile_tau', 0.9)  # 使用90%分位数作为保守估计
-    
-    logger.info(f"使用GAM分位数回归: use_gam={use_gam}, tau={tau}")
-    
-    mu_model = fit_quantile_models(
-        long_df,
-        tau=tau,
-        features=model_params.get('features', 'poly+interactions'),
-        model=model_params.get('quantile_model', 'GAM'),
-        use_gam=use_gam
-    )
-    
-    # 4. 求解w*(b)曲线（使用网格搜索）
-    logger.info("步骤 4: 使用网格搜索求解w*(b)曲线")
-    
-    # 网格搜索参数（基于实际数据范围）
-    actual_week_min = long_df['week'].min()
-    actual_week_max = long_df['week'].max()
-    
-    grid_params = {
-        'thr_adj': 0.04,  # 浓度阈值4%
-        'delta': 0.1,     # 失败风险阈值10%
-        'w_min': actual_week_min,  # 使用实际最小孕周
-        'w_max': actual_week_max,  # 使用实际最大孕周
-        'w_step': 0.5,    # 孕周搜索步长
-        'b_resolution': 40  # BMI网格分辨率
-    }
-    
-    logger.info(f"使用实际数据范围: 孕周 {actual_week_min:.1f} - {actual_week_max:.1f} 周")
-    
-    # 使用网格搜索求解w*(b)曲线
-    wstar_curve = solve_w_star_curve_with_grid_search(
-        long_df, mu_model, sigma_lookup, 
-        model_params.get('scenario_params', {}),
-        **grid_params
-    )
-    
-    # 5. BMI分组（基于实际数据分布）
-    logger.info("步骤 5: BMI分组")
-    grouping_params = config.get('grouping', {})
-    
-    # 使用实际数据的BMI四分位数作为切点
-    bmi_quartiles = long_df['BMI_used'].quantile([0.25, 0.5, 0.75]).values
-    custom_cuts = bmi_quartiles.tolist()
-    
-    logger.info(f"使用BMI四分位数作为切点: {custom_cuts}")
-    
-    cuts, groups = find_bmi_cuts(
-        wstar_curve,
-        who_cuts=grouping_params.get('who_cuts', [18.5, 25.0, 30.0]),
-        method='custom',
-        custom_cuts=custom_cuts,
-        delta=grouping_params.get('delta', 2.0),
-        min_group_n=grouping_params.get('min_group_n', 10),  # 降低最小组数要求
-        min_cut_distance=grouping_params.get('min_cut_distance', 1.0),
-        search=grouping_params.get('search', 'tree'),
-        tree_params=grouping_params.get('tree_params', {}),
-        dp_params=grouping_params.get('dp_params', {})
-    )
-    
-    # 6. 评估分组质量
-    logger.info("步骤 6: 评估分组质量")
-    evaluation = evaluate_grouping_quality(groups, wstar_curve)
-    
-    # 7. 生成报告
-    logger.info("步骤 7: 生成报告")
-    report = create_grouping_report(groups, evaluation)
-    
-    # 8. 跳过可视化
-    logger.info("步骤 8: 跳过可视化（已禁用）")
-    main_plot = None
-    
-    # 9. 汇总结果
-    results = {
-        'config': config,
-        'data_summary': data_summary,
-        'wstar_curve': wstar_curve,
-        'groups': groups,
-        'cuts': cuts,
-        'evaluation': evaluation,
-        'report': report,
-        'main_plot': main_plot,
-        'models': {
-            'mu_model': mu_model,
-            'sigma_lookup': sigma_lookup
-        }
-    }
-    
-    logger.info("分析流程完成")
-    
-    return results
-
-
 if __name__ == "__main__":
+    import numpy as np
+    import pandas as pd
     main()

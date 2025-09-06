@@ -1,0 +1,26 @@
+alpha: !!python/object/apply:numpy._core.multiarray.scalar
+- &id001 !!python/object/apply:numpy.dtype
+  args:
+  - f8
+  - false
+  - true
+  state: !!python/tuple
+  - 3
+  - <
+  - null
+  - null
+  - null
+  - -1
+  - -1
+  - 0
+- !!binary |
+  liex5Yq3JkA=
+beta: !!python/object/apply:numpy._core.multiarray.scalar
+- *id001
+- !!binary |
+  DXcO3cBCOMA=
+bmi_ref: 30.0
+delta: 0.01
+gamma: 0.5
+t_max: 25.0
+t_min: 12.0
