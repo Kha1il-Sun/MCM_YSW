@@ -1,0 +1,199 @@
+# 问题3：多因素NIPT最佳时点优化配置
+# 基于Q2扩展，综合考虑多种因素（身高、体重、年龄等）
+
+# 模型参数
+model_params:
+  # 分位数回归参数
+  quantile_tau: 0.90              # 分位数水平（保守估计）
+  use_gam: true                   # 使用广义加性模型
+  quantile_model: "XGBoost"       # XGBoost|GAM|GBR
+  
+  # 多因素特征工程
+  multi_factor_features:
+    enabled: true                 # 启用多因素建模
+    base_features: ["week", "BMI_used"]  # 基础特征
+    additional_features: ["age", "height", "weight", "gc_percent", "readcount"]  # 额外特征
+    interaction_terms: true       # 启用交互项
+    polynomial_degree: 2          # 多项式次数
+    
+  # 特征选择
+  feature_selection:
+    enabled: true                 # 启用特征选择
+    method: "recursive"           # recursive|lasso|mutual_info
+    n_features: 15                # 最大特征数
+    cv_folds: 5                   # 交叉验证折数
+    
+  # 模型集成
+  ensemble_method: "stacking"     # stacking|voting|bagging
+  base_models: ["xgboost", "gam", "rf"]  # 基模型列表
+
+# 检测误差建模（增强版）
+sigma_estimation:
+  # 多维sigma估计
+  multi_dimensional: true         # 启用多维度误差建模
+  error_factors: ["week", "BMI_used", "age", "height"]  # 影响误差的因素
+  
+  # 局部估计参数
+  local_estimation:
+    enabled: true                 # 启用局部估计
+    week_bins: 6                  # 孕周分箱数
+    bmi_bins: 4                   # BMI分箱数
+    age_bins: 3                   # 年龄分箱数
+    min_samples_per_bin: 5        # 每个分箱最小样本数
+  
+  # 收缩估计
+  shrinkage:
+    enabled: true                 # 启用向全局收缩
+    lambda: 0.2                   # 收缩参数
+    adaptive: true                # 自适应收缩
+    
+  # 动态阈值调整
+  dynamic_threshold:
+    enabled: true                 # 启用动态阈值
+    confidence_level: 0.95        # 置信水平
+    method: "quantile"            # quantile|normal|bootstrap
+
+# 成功率建模（多因素）
+success_modeling:
+  # 成功概率建模
+  enabled: true                   # 启用成功率建模
+  method: "logistic"              # logistic|gam|xgboost
+  
+  # 失败因素
+  failure_factors:
+    early_pregnancy: true         # 早孕期失败率高
+    high_bmi: true               # 高BMI失败率高
+    age_effect: true             # 年龄效应
+    technical_factors: true       # 技术因素（GC%、读段数）
+    
+  # 情景参数
+  scenario_params:
+    base_failure_rate: 0.05       # 基础失败率
+    early_penalty_factor: 2.0     # 早孕期惩罚因子
+    bmi_penalty_factor: 1.5       # 高BMI惩罚因子
+    age_effect_threshold: 35      # 年龄效应阈值
+
+# 达标比例建模
+attainment_modeling:
+  # 达标概率建模
+  enabled: true                   # 启用达标概率建模
+  threshold: 0.04                 # Y染色体浓度阈值（4%）
+  
+  # 多因素影响
+  multi_factor_effects:
+    bmi_effect: true              # BMI效应
+    age_effect: true              # 年龄效应
+    gestational_week_effect: true # 孕周效应
+    maternal_height_effect: true  # 母体身高效应
+    
+  # 时间依赖建模
+  time_dependent:
+    enabled: true                 # 启用时间依赖建模
+    curve_family: "weibull"       # weibull|logistic|gompertz
+    individual_curves: true       # 个体化曲线
+
+# 优化参数
+optimization:
+  # 阈值设置
+  thr_adj: 0.04                   # 调整后阈值
+  delta: 0.10                     # 失败风险阈值
+  
+  # 搜索范围
+  w_min: 8.0                      # 最小孕周
+  w_max: 22.0                     # 最大孕周
+  w_step: 0.1                     # 孕周搜索步长（更精细）
+  b_resolution: 50                # BMI网格分辨率
+  
+  # 风险函数权重
+  risk_weights:
+    time_weights: [1.0, 3.0, 8.0] # 低、中、高风险时期权重
+    failure_cost: 2.0              # 失败成本权重
+    detection_accuracy_weight: 1.5 # 检测准确性权重
+    multi_factor_weight: 1.0       # 多因素权重
+    
+  # 约束条件
+  constraints:
+    min_success_prob: 0.85        # 最小成功概率
+    min_attain_prob: 0.80         # 最小达标概率
+    safety_margin: 0.5            # 安全边际（周）
+
+# 分组策略
+grouping:
+  method: "hybrid"                # hybrid|tree|dp|custom
+  who_cuts: [18.5, 25.0, 30.0, 35.0]  # WHO标准切点
+  
+  # 约束条件
+  constraints:
+    min_group_size: 20            # 最小组内样本量
+    min_cut_distance: 2.0         # 最小切点间距
+    max_groups: 5                 # 最大分组数
+    
+  # 优化参数
+  delta: 2.0                      # WHO切点微调范围
+  search: "tree"                  # tree|dp
+  
+  # 多因素分组考虑
+  multi_factor_grouping:
+    enabled: true                 # 启用多因素分组考虑
+    secondary_factors: ["age", "height"]  # 次要分组因素
+    interaction_threshold: 0.1     # 交互作用阈值
+
+# 验证设置
+validation:
+  # 交叉验证
+  cross_validation:
+    enabled: true                 # 启用交叉验证
+    method: "group_kfold"         # group_kfold|stratified|time_series
+    n_folds: 5                    # 折数
+    group_col: "id"               # 分组列
+    
+  # 时间外推验证
+  temporal_validation:
+    enabled: true                 # 启用时间外推验证
+    hold_out_ratio: 0.2           # 保留测试集比例
+    
+  # Bootstrap置信区间
+  bootstrap:
+    enabled: true                 # 启用Bootstrap
+    n_samples: 1000               # Bootstrap样本数
+    confidence_level: 0.95        # 置信水平
+
+# 敏感性分析
+sensitivity:
+  # 参数敏感性
+  parameter_sensitivity:
+    enabled: true                 # 启用参数敏感性分析
+    tau_range: [0.80, 0.85, 0.90, 0.95]  # tau范围
+    delta_range: [0.05, 0.10, 0.15, 0.20]  # delta范围
+    threshold_range: [0.035, 0.040, 0.045, 0.050]  # 阈值范围
+    
+  # 检测误差敏感性
+  error_sensitivity:
+    enabled: true                 # 启用误差敏感性分析
+    sigma_multipliers: [0.5, 0.8, 1.0, 1.2, 1.5, 2.0]  # sigma倍数
+    
+  # 多因素敏感性
+  multi_factor_sensitivity:
+    enabled: true                 # 启用多因素敏感性
+    factor_perturbation: 0.1      # 因素扰动比例
+
+# 输出设置
+output:
+  # 报告设置
+  report:
+    detailed: true                # 详细报告
+    include_plots: true           # 包含图表
+    format: ["csv", "txt", "html"] # 输出格式
+    
+  # 图表设置
+  plots:
+    enabled: true                 # 启用图表
+    dpi: 300                      # 图片分辨率
+    figsize: [12, 8]              # 图片尺寸
+    style: "seaborn"              # 图表样式
+    
+  # 保存设置
+  save:
+    models: true                  # 保存模型
+    intermediate_results: true     # 保存中间结果
+    config_backup: true           # 备份配置
