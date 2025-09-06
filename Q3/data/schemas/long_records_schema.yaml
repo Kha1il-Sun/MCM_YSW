@@ -1,0 +1,104 @@
+schema_version: "1.0"
+description: "Schema for longitudinal records data (step1_long_records.csv)"
+
+required_columns:
+  - id
+  - t
+  - BMI
+  - Y_frac
+
+optional_columns:
+  - Z1
+  - Z2
+  - Z3
+  - Z4
+  - Z5
+  - Assay_A
+  - Assay_B
+  - Assay_C
+
+column_types:
+  id: 
+    type: "integer"
+    nullable: false
+    description: "Patient identifier"
+  
+  t: 
+    type: "float"
+    nullable: false
+    min_value: 0.0
+    max_value: 100.0
+    description: "Time point in weeks"
+  
+  BMI: 
+    type: "float"
+    nullable: false
+    min_value: 10.0
+    max_value: 50.0
+    description: "Body Mass Index"
+  
+  Y_frac: 
+    type: "float" 
+    nullable: false
+    min_value: 0.0
+    max_value: 1.0
+    description: "Fraction achieving target"
+
+  Z1:
+    type: "float"
+    nullable: true
+    description: "Covariate Z1"
+  
+  Z2:
+    type: "float"
+    nullable: true
+    description: "Covariate Z2"
+    
+  Z3:
+    type: "float"
+    nullable: true
+    description: "Covariate Z3"
+    
+  Z4:
+    type: "float"
+    nullable: true
+    description: "Covariate Z4"
+    
+  Z5:
+    type: "float"
+    nullable: true
+    description: "Covariate Z5"
+
+  Assay_A:
+    type: "float"
+    nullable: true
+    description: "Assay type A measurement"
+    
+  Assay_B:
+    type: "float"
+    nullable: true
+    description: "Assay type B measurement"
+    
+  Assay_C:
+    type: "float"
+    nullable: true
+    description: "Assay type C measurement"
+
+validation_rules:
+  - rule: "time_monotonic"
+    description: "Time points must be monotonically increasing within each id"
+    
+  - rule: "no_duplicate_times"
+    description: "No duplicate time points allowed for same id"
+    
+  - rule: "min_observations_per_id"
+    description: "Each id must have at least 3 observations"
+    min_count: 3
+    
+  - rule: "y_frac_bounds"
+    description: "Y_frac must be between 0 and 1"
+    
+  - rule: "bmi_clinical_range"
+    description: "BMI should be in clinically reasonable range"
+    warn_min: 12.0
+    warn_max: 45.0

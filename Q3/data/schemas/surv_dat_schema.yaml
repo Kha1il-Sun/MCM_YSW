@@ -1,0 +1,112 @@
+schema_version: "1.0"
+description: "Schema for survival data with interval censoring (step1_surv_dat_fit.csv)"
+
+required_columns:
+  - id
+  - L
+  - R
+  - censor_type
+  - BMI_base
+
+optional_columns:
+  - Z1
+  - Z2
+  - Z3
+  - Z4
+  - Z5
+  - Assay_A
+  - Assay_B
+  - Assay_C
+
+column_types:
+  id: 
+    type: "integer"
+    nullable: false
+    description: "Patient identifier"
+  
+  L: 
+    type: "float"
+    nullable: false
+    min_value: 0.0
+    description: "Left endpoint of censoring interval"
+  
+  R: 
+    type: "float"
+    nullable: true
+    min_value: 0.0
+    description: "Right endpoint of censoring interval (null for right censoring)"
+  
+  censor_type:
+    type: "string"
+    nullable: false
+    allowed_values: ["interval", "left", "right", "exact"]
+    description: "Type of censoring"
+  
+  BMI_base: 
+    type: "float"
+    nullable: false
+    min_value: 10.0
+    max_value: 50.0
+    description: "Baseline Body Mass Index"
+
+  Z1:
+    type: "float"
+    nullable: true
+    description: "Covariate Z1"
+  
+  Z2:
+    type: "float"
+    nullable: true
+    description: "Covariate Z2"
+    
+  Z3:
+    type: "float"
+    nullable: true
+    description: "Covariate Z3"
+    
+  Z4:
+    type: "float"
+    nullable: true
+    description: "Covariate Z4"
+    
+  Z5:
+    type: "float"
+    nullable: true
+    description: "Covariate Z5"
+
+  Assay_A:
+    type: "float"
+    nullable: true
+    description: "Assay type A measurement"
+    
+  Assay_B:
+    type: "float"
+    nullable: true
+    description: "Assay type B measurement"
+    
+  Assay_C:
+    type: "float"
+    nullable: true
+    description: "Assay type C measurement"
+
+validation_rules:
+  - rule: "interval_consistency"
+    description: "L <= R for interval censoring, R is null for right censoring"
+    
+  - rule: "censor_type_consistency" 
+    description: "Censoring type must match L/R values"
+    
+  - rule: "no_negative_times"
+    description: "L and R must be non-negative"
+    
+  - rule: "unique_ids"
+    description: "Each id should appear only once"
+    
+  - rule: "bmi_clinical_range"
+    description: "BMI_base should be in clinically reasonable range"
+    warn_min: 12.0
+    warn_max: 45.0
+    
+  - rule: "reasonable_survival_times"
+    description: "Survival times should be reasonable (< 200 weeks)"
+    max_time: 200.0

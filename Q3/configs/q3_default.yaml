@@ -1,0 +1,61 @@
+seed: 42
+threshold: 0.04
+clinical_bounds: [12.0, 25.0]
+tau: 0.90
+
+weights: 
+  w1: 1.0
+  w2: 0.6
+  w3: 0.3
+
+delay: 
+  pref_week: 15.0
+  scale: 10.0
+
+mi:
+  M: 20
+  q: 0.02
+  use_local_sigma: true
+  deterministic_by_id: true      # 按 id 稳定播种，保证可复现
+
+aft:
+  families: ["lognormal", "loglogistic", "weibull"]
+  select_by: "AIC"               # or BIC
+  ic_cox_check: true
+  ensemble:
+    enable: true                 # stacking or simple averaging
+    method: "stacking"           # "avg" | "stacking"
+    penalty: 1e-3                # L2 for stacking weights
+
+grouping:
+  method: "dp"                   # or "cart"
+  K: 4
+  min_group_size: 40
+
+sigma_sweep:
+  factors: [0.5, 1.0, 1.5, 2.0, 5.0]
+
+performance:
+  chunk_size: 2000
+  max_workers: 4
+  memory_limit_gb: 8
+  cache_dir: ".cache"
+  use_joblib: true
+
+logging:
+  level: "INFO"
+  file: "logs/mcm_q3.log"
+  rotate_max_mb: 100
+  backup_count: 5
+
+validation:
+  cv_folds: 5
+  bootstrap_samples: 100
+  test_size: 0.2
+  stratify_by: "BMI_quartile"
+
+plots:
+  dpi: 300
+  figsize: [10, 8]
+  style: "seaborn-v0_8"
+  save_formats: ["png", "pdf"]

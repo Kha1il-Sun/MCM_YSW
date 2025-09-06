@@ -1,0 +1,52 @@
+# Core scientific computing
+numpy>=1.21.0
+pandas>=1.5.0
+scipy>=1.9.0
+
+# Survival analysis
+lifelines>=0.27.0
+scikit-survival>=0.20.0
+
+# Machine learning
+scikit-learn>=1.1.0
+xgboost>=1.6.0
+
+# Statistical modeling
+statsmodels>=0.13.0
+
+# Configuration and validation
+pydantic>=1.10.0
+pyyaml>=6.0
+omegaconf>=2.2.0
+
+# Visualization
+matplotlib>=3.5.0
+seaborn>=0.11.0
+plotly>=5.10.0
+
+# Performance and parallelization
+joblib>=1.2.0
+numba>=0.56.0
+dask[complete]>=2022.8.0
+
+# Logging and monitoring
+loguru>=0.6.0
+tqdm>=4.64.0
+
+# Development and testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+black>=22.0.0
+isort>=5.10.0
+ruff>=0.0.200
+
+# Pre-commit hooks
+pre-commit>=2.20.0
+
+# Documentation
+sphinx>=5.0.0
+sphinx-rtd-theme>=1.0.0
+
+# Jupyter notebooks (optional)
+jupyter>=1.0.0
+ipywidgets>=7.7.0
