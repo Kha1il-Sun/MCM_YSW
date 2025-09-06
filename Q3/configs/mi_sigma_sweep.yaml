@@ -1,0 +1,49 @@
+seed: 42
+threshold: 0.04
+clinical_bounds: [12.0, 25.0]
+tau: 0.90
+
+weights: 
+  w1: 1.0
+  w2: 0.6
+  w3: 0.3
+
+delay: 
+  pref_week: 15.0
+  scale: 10.0
+
+mi:
+  M: 10  # 减少插补次数以加速敏感性分析
+  q: 0.02
+  use_local_sigma: true
+  deterministic_by_id: true
+
+aft:
+  families: ["lognormal"]  # 只用一个分布族加速
+  select_by: "AIC"
+  ic_cox_check: false
+  ensemble:
+    enable: false
+
+grouping:
+  method: "dp"
+  K: 3  # 减少分组数
+  min_group_size: 50
+
+sigma_sweep:
+  factors: [0.1, 0.2, 0.5, 0.8, 1.0, 1.2, 1.5, 2.0, 3.0, 5.0, 10.0]
+  base_sigma: 1.0
+  sweep_mode: "multiplicative"  # or "additive"
+
+performance:
+  chunk_size: 1000
+  max_workers: 6
+  memory_limit_gb: 12
+  cache_dir: ".cache"
+  use_joblib: true
+
+logging:
+  level: "INFO"
+  file: "logs/sigma_sweep.log"
+  rotate_max_mb: 50
+  backup_count: 3

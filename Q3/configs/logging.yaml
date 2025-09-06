@@ -1,0 +1,69 @@
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  standard:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  
+  detailed:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(funcName)s:%(lineno)d - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  
+  simple:
+    format: '%(levelname)s - %(message)s'
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: standard
+    stream: ext://sys.stdout
+  
+  file:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: logs/mcm_q3.log
+    maxBytes: 104857600  # 100MB
+    backupCount: 5
+    encoding: utf8
+  
+  error_file:
+    class: logging.handlers.RotatingFileHandler
+    level: ERROR
+    formatter: detailed
+    filename: logs/errors.log
+    maxBytes: 52428800   # 50MB
+    backupCount: 3
+    encoding: utf8
+
+loggers:
+  src:
+    level: DEBUG
+    handlers: [console, file, error_file]
+    propagate: false
+  
+  src.mi_interval_imputer:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: false
+  
+  src.aft_models:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: false
+  
+  src.risk_objective:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: false
+  
+  src.grouping:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: false
+
+root:
+  level: INFO
+  handlers: [console, file]
